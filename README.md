@@ -62,3 +62,7 @@
 ####    - 가운데 : 5V
 ####    - S : 시그널 A0
 ####    - 라이브러리 : DHT.h
+
+### ★ 7Segment
+####    - Common-Anode Type : Common에 Vcc(5V) 가 연결되고 각 핀에 0V가 인가되면 LED가 들어오는 형태
+####    - Common-Cathode Type : Common에 GND(0V)가 연결되고 각 핀이 VCC(5V)가 인가되면 LED가 들어오는 형태
