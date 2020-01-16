@@ -66,4 +66,3 @@
 ### ★ 7Segment
 ####    - Common-Anode Type : Common에 Vcc(5V) 가 연결되고 각 핀에 0V가 인가되면 LED가 들어오는 형태
 ####    - Common-Cathode Type : Common에 GND(0V)가 연결되고 각 핀이 VCC(5V)가 인가되면 LED가 들어오는 형태
-![initial](https://github.com/Happy-Mr-Jason/Arduino-Study/blob/master/_Datasheets/7Segment.png?raw=true)
