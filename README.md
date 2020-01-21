@@ -66,3 +66,40 @@
 ### ★ 7Segment
 ####    - Common-Anode Type : Common에 Vcc(5V) 가 연결되고 각 핀에 0V가 인가되면 LED가 들어오는 형태
 ####    - Common-Cathode Type : Common에 GND(0V)가 연결되고 각 핀이 VCC(5V)가 인가되면 LED가 들어오는 형태
+
+### ★ LCD Display with Original
+####    - 라이브러리 : LiquidCrystal
+####    - GND : 0V
+####    - VCC : 5V
+####    - DB0~DB7 :
+####    - DB0~DB7 : 
+####    - RW : 쓰기
+####    - LED : BackLight
+
+### ★ LCD Display with MH Module 
+####    - 라이브러리 : LiquidCrystal I2C
+####    - GND : 0V
+####    - VCC : 5V
+####    - SDA : A4 or pin27
+####    - SCL : A5 or pin28
+
+### ★ RFID Access
+####    - RFID 태그
+####    - RFID Reader
+####    - 원리 : 자기장을 발생시켜 태그를 판독기에 가까이 가져가면 태그의 코일에서 유도전류 발생 이 전류를 통해 태그에 내장된 칩에 전원이 공급되고, 태그의 정보가 리더의 안테나로 전송된다. 결과적으로 리더는 태그 정보를 받아 대상을 식별합니다.
+####    - 라이브러리 : rfid-master
+####    -pin RST : 9
+####    -pin SDA : 10
+####    -pin MOSI : 11
+####    -pin MISO : 12
+####    -pin IRQ : Not Used
+####    -pin SCK : 13
+####    -pin GND : 0V
+####    -pin 3.3V : 3.3V
+####    카드 20 4 2 43 
+####    둥근키 23 69 117 123  
+
+태현 : 둥근키 : 231 55 109 123 카드 : 4 177 43 43 
+
+
+
