@@ -98,7 +98,7 @@
 ####    -pin 3.3V : 3.3V
 ####    카드 20 4 2 43 
 ####    둥근키 23 69 117 123  
-
+<table>
 <tr><th>Command</th><th>Reply</th><th>Comment</th></tr>
 <tr><td>AT</td><td>OK</td><td>Communications test</td></tr>
 <tr><td>AT+VERSION</td><td>OKlinvorV1.8</td><td>Firmware version.</td></tr>
@@ -116,7 +116,7 @@
 <tr><td>AT+BAUDA</td><td>OK460800</td><td>Sets the baud rate to 460800</td></tr>
 <tr><td>AT+BAUDB</td><td>OK921600</td><td>Sets the baud rate to 921600</td></tr>
 <tr><td>AT+BAUDC</td><td>OK1382400</td><td>Sets the baud rate to 1382400</td></tr>
-
+</table>
 
 
 
