@@ -1,6 +1,4 @@
-### Bluetooth with arduino
-####    Commands
-
+### HC-06 Bluetooth
 ### AT Commands
 <table>
 <tr><th>Command</th><th>Reply</th><th>Comment</th></tr>
