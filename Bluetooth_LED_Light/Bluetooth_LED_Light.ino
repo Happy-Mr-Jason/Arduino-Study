@@ -39,30 +39,36 @@ void process_BT_CMD()
     if (readCommand.equals("LED RED ON\n"))
     {
         digitalWrite(RED, HIGH);
+        return_CMD_to_BT();
     }
     if (readCommand.equals("LED RED OFF\n"))
     {
         digitalWrite(RED, LOW);
+        return_CMD_to_BT();
     }
     if (readCommand.equals("LED GREEN ON\n"))
     {
         digitalWrite(GREEN, HIGH);
+        return_CMD_to_BT();
     }
     if (readCommand.equals("LED GREEN OFF\n"))
     {
         digitalWrite(GREEN, LOW);
+        return_CMD_to_BT();
     }
     if (readCommand.equals("LED WHITE ON\n"))
     {
         digitalWrite(WHITE, HIGH);
+        return_CMD_to_BT();
     }
     if (readCommand.equals("LED WHITE OFF\n"))
     {
         digitalWrite(WHITE, LOW);
+        return_CMD_to_BT();
     }
 }
 
-void return_CMD_to_BT(String return_msg){
-    
-
+void return_CMD_to_BT(){
+    BTserial.print(readCommand);
+    readCommand = "";
 }
