@@ -77,7 +77,7 @@
 ####    - LED : BackLight
 
 ### ★ LCD Display with MH Module 
-####    - 라이브러리 : LiquidCrystal I2C
+####    - 라이브러리 : b                                                                                                                                                                                                                                                                                                   
 ####    - GND : 0V
 ####    - VCC : 5V
 ####    - SDA : A4 or pin27
@@ -98,3 +98,10 @@
 ####    -pin 3.3V : 3.3V
 ####    카드 20 4 2 43 
 ####    둥근키 23 69 117 123  
+
+### ★ STEPPING MOTOR
+####    - IN1~IN4 : Digital Input
+####    - + : 5V
+####    - - : GND
+####    - 라이브러리 : Stepper.h
+
