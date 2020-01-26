@@ -7,7 +7,7 @@
 ####    - 허용전압 : 1.7V
 ####    - 허용전류 : 10mA
     
-### ★ 옴의 법칙Ω
+### ★ 옴의 법칙Ω
 ####    - 전압(V) = 전류(I) x 저항(R)
 
 ### ★ PWM (Pulse Width Modulation : 펄스 폭 변조)
@@ -77,7 +77,7 @@
 ####    - LED : BackLight
 
 ### ★ LCD Display with MH Module 
-####    - 라이브러리 : b                                                                                                                                                                                                                                                                                                   
+####    - 라이브러리 : LiquidCrystal_I2C                                                                                                                                                                                                                                                                                    
 ####    - GND : 0V
 ####    - VCC : 5V
 ####    - SDA : A4 or pin27
