@@ -76,8 +76,8 @@
 ####    - RW : 쓰기
 ####    - LED : BackLight
 
-### ★ LCD Display with MH Module 
-####    - 라이브러리 : LiquidCrystal_I2C                                                                                                                                                                                                                                                                                    
+### ★ LCD Display with MH Module
+####    - 라이브러리 : LiquidCrystal_I2C
 ####    - GND : 0V
 ####    - VCC : 5V
 ####    - SDA : A4 or pin27
