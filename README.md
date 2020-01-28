@@ -71,8 +71,9 @@
 ####    - 라이브러리 : LiquidCrystal
 ####    - GND : 0V
 ####    - VCC : 5V
-####    - DB0~DB7 :
-####    - DB0~DB7 : 
+####    - RST : 12
+####    - EN : 11
+####    - DB0~DB7 : Digital 5,4,3,2
 ####    - RW : 쓰기
 ####    - LED : BackLight
 
