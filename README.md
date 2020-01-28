@@ -89,12 +89,12 @@
 ####    - RFID Reader
 ####    - 원리 : 자기장을 발생시켜 태그를 판독기에 가까이 가져가면 태그의 코일에서 유도전류 발생 이 전류를 통해 태그에 내장된 칩에 전원이 공급되고, 태그의 정보가 리더의 안테나로 전송된다. 결과적으로 리더는 태그 정보를 받아 대상을 식별합니다.
 ####    - 라이브러리 : rfid-master
-####    -pin RST : 9
-####    -pin SDA : 10
-####    -pin MOSI : 11
-####    -pin MISO : 12
-####    -pin IRQ : Not Used
-####    -pin SCK : 13
+####    -pin RST(Reset power Down Pin) : 9
+####    -pin SDA(I2C-bus serial data line input/output) : 10
+####    -pin MOSI(SPI master out, slave in) : 11
+####    -pin MISO(SPI master in, slave out) : 12
+####    -pin IRQ(interrupt request output: indicates an interrupt event) : Not Used
+####    -pin SCK(SPI serial clock input) : 13
 ####    -pin GND : 0V
 ####    -pin 3.3V : 3.3V
 ####    카드 20 4 2 43 

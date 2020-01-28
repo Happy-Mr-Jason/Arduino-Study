@@ -37,9 +37,9 @@ void loop()
 
 void measure_distance(){
     digitalWrite(TRIG, LOW);
-    delay(2);
+    delayMicroseconds(2);
     digitalWrite(TRIG, HIGH);
-    delay(2);
+    delayMicroseconds(2);
     digitalWrite(TRIG, LOW);
     distance = pulseIn(ECHO, HIGH) / 58.2;
     //Serial.println(distance + "");
