@@ -1,5 +1,5 @@
 #include <SoftwareSerial.h>
-SoftwareSerial BTserial(2, 3);
+SoftwareSerial BTserial(3, 2);
 
 char c = ' ';
 void setup()
