@@ -56,7 +56,7 @@ void lcd_Display()
 //열림 : 서보모터 90도 열림
 void sv_Open()
 {
-    Serial.println(String("Open") + mAngle);
+    Serial.println(String("Open ") + mAngle);
     if (mAngle != 90)
     {
         for (int i = 0; i <= 90; i++)
@@ -65,14 +65,14 @@ void sv_Open()
             servo.write(mAngle);
             delay(15);
         }
-        Serial.println(String("angle" + mAngle));
+        Serial.println(String("Angle" + mAngle));
     }
 }
 
 //닫힘 : 서보모터 0도 복귀
 void sv_Close()
 {
-    Serial.println(String("Close") + mAngle);
+    Serial.println(String("Close ") + mAngle);
     if (mAngle != 0)
     {
         for (int i = 90; i >= 0; i--)
@@ -81,6 +81,6 @@ void sv_Close()
             servo.write(mAngle);
             delay(15);
         }
-        Serial.println(String("angle" + mAngle));
+        Serial.println(String("Angle" + mAngle));
     }
 }
