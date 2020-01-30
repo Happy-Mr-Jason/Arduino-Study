@@ -13,6 +13,7 @@ int led_pin[] = {8, 9, 10};
 boolean btn_Last_Status[] = {LOW, LOW, LOW};
 boolean btn_Current_Status[] = {LOW, LOW, LOW};
 boolean led_On[] = {LOW, LOW, LOW};
+String led_state[] = {"", "", ""};
 
 void setup()
 {
@@ -40,12 +41,16 @@ void loop()
             char message[5] = "L  \n";
             message[1] = i + 1 + '0';
             message[2] = led_On[i] + '0';
-            Serial.print(message);
-            BTSerial.print(message);
+            led_state[i] = message;
             delay(200);
         }
         btn_Last_Status[i] = btn_Current_Status[i];
         digitalWrite(led_pin[i], led_On[i]);
+    }
+    for(int i = 0 ; i<3 ; i++){
+        if(!led_state[i].equals("")){
+            BTSerial.print(led_state[i]);
+        }
     }
     BTSerial.print(String("T") + int(mTemperature) + String("\n"));
     BTSerial.print(String("H") + int(mHumidity) + String("\n"));
