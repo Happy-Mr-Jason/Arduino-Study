@@ -37,12 +37,16 @@ void loop()
     analogWrite(L_SPEED, 255);
     analogWrite(R_SPEED, 255);
     
-    runCarforward();
-    delay(2000);
-    stopCar();
+    // runCarforward();
+    // delay(2000);
+    // stopCar();
     
     turnCarLeft();
-    delay(2000);
+    delay(10000);
+    stopCar();
+
+    turnCarRight();
+    delay(10000);
     stopCar();
            
 }
