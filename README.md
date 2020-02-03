@@ -106,3 +106,13 @@
 ####    - - : GND
 ####    - 라이브러리 : Stepper.h
 
+### ★ GAS DETECT Sensor
+####    - GND : GND
+####    - VCC : 5V
+####    - DO : Digital output
+####    - AO : Analog output
+
+### ★ Infrared DETECT Sensor
+####    - GND : GND
+####    - OUT : Digital output
+####    - VCC : 5V

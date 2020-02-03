@@ -129,7 +129,7 @@ void led_light(int button) {
   } else if (button == 5) {
     digitalWrite(RED, HIGH);
     digitalWrite(GREEN, HIGH);
-    digitalWrite(BLUE, LOW;
+    digitalWrite(BLUE, LOW);
   }else {
     
   }
