@@ -2,13 +2,15 @@
 #include <SPI.h>
 
 byte MAC[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEC};
-IPAddress IP(192,168,2,77);
+IPAddress IP(192,168,2,78);
 
 void setup()
 {
     Serial.begin(9600);
+    //Get a IP Address from DHCP server
     if (Ethernet.begin(MAC) == 0)
     {
+        //If can not get a IP Address, set the IP address manually.
         Serial.println("DHCP Fail.......");
         Ethernet.begin(MAC, IP);
     }
