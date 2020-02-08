@@ -1,14 +1,19 @@
 #include <Ethernet.h>
 #include <SPI.h>
 
+//MAC address for Arduino
 byte MAC[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEC};
+//IP address for Arduino
 IPAddress IP(192, 168, 2, 77);
+// Create a Web-server 
 EthernetServer server(80);
 
 void setup()
 {
     Serial.begin(9600);
+    //Ethernet Sheild init and start
     Ethernet.begin(MAC, IP);
+    //Web-server start
     server.begin();
     delay(2000);
 
@@ -31,9 +36,11 @@ void loop()
             char c = client.read();
             if (current)
             {
+                //transfer the HTML source to client
                 client.println("HTTP/1.1 200 OK");
                 client.println("Content-Type : text/html");
                 client.println("Connection close");
+                //Refresh interval 3sec
                 client.println("Refresh: 3");
                 client.println();
                 client.println("<!DOCTYPE html>");
