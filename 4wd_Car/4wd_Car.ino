@@ -24,14 +24,27 @@
 
 //Bluetooth Communication
 SoftwareSerial BTSerial(AD_RX_BT_TX, AD_TX_BT_RX);
-//ServoMotors
-Servo mServo_B, mServo_T;
-//Base Rotation Limits
-int mServo_B_limit_p = 110;
-int mServo_B_limit_n = 70;
-//Tilter Tilting Limits
-int mServo_T_limit_p = 110;
-int mServo_T_limit_n = 70;
+//Bluetooth Communication Buffer
+byte buffer[];
+//Bluetooth Buffer Position
+int buffer_pos = 0;
+//ServoMotor Nutral Position
+const int S_NEUTRAL = 90;
+//ServoMotors angle increase
+const int S_INC = 1;
+//ServoMotors angle decrease
+const int S_DEC = 2;
+//ServoMotor struct
+struct ServoM
+{
+    Servo servo;
+    //Servo Rotation Limits
+    int limit_p;
+    int limit_n;
+    //Position Finished flag
+    boolean positioning_Finished;
+    void (*position)(int);
+} mServo_B, mServo_T;
 //Operation Mode (0 : Manual, 1 : Auto)
 int operation_Mode = 0;
 //Distans variables (Unit : cm)
@@ -39,9 +52,40 @@ int distance_F, distance_R, distance_L;
 
 void setup()
 {
+    //Serial Init
     Serial.begin(9600);
+    //Bluetooth Init
     BTSerial.begin(9600);
-    //Ultrasonic Sensors
+    //Boad IO Init
+    board_io_Init();
+    //Servo Motors
+    servo_Motor_Init();
+    //Car Init Stop
+    stopCar();
+}
+
+void loop()
+{
+    //Bluetooth Communication
+    bluetooth_Comms();
+    //Mesurement of Distance
+    distance_Front();
+    distance_Left();
+    distance_Right();
+    //Motor Controll
+    analogWrite(L_SPEED, 255);
+    analogWrite(R_SPEED, 255);
+    // turnCarLeft();
+    // stopCar();
+    // turnCarRight();
+    // stopCar();
+
+    monitor_Serial();
+}
+
+void board_io_Init()
+{
+    //Ultrasonic Sensors Pins
     pinMode(UF_TRIG, OUTPUT);
     pinMode(UF_ECHO, INPUT);
     pinMode(UR_TRIG, OUTPUT);
@@ -55,45 +99,112 @@ void setup()
     pinMode(M_IN4, OUTPUT);
     pinMode(L_SPEED, OUTPUT);
     pinMode(R_SPEED, OUTPUT);
-    //Servo Motors
-    mServo_B.attach(S_BASE);
-    mServo_T.attach(S_TILT);
-    //Servo Motors Init Positioning (Center)
-    mServo_B.write(90);
-    mServo_T.write(90);
-    //Car Init Stop
-    stopCar();
 }
 
-void loop()
+//Bluetooth Communication Reading Buffer
+void bluetooth_Comms()
 {
-    //Bluetooth Communication
-    bluetooth_Coms();
-    //Mesurement of Distance
-    distance_Front();
-    distance_Left();
-    distance_Right();
-
-    //Motor Controll
-    analogWrite(L_SPEED, 255);
-    analogWrite(R_SPEED, 255);
-    // turnCarLeft();
-    // stopCar();
-    // turnCarRight();
-    // stopCar();
-
-    monitor_Serial();
+    //Protocol - Receive
+    //byte[0] : Start = ENQ
+    //byte[1] : Address = register or id number
+    //byte[2] : Datalength
+    //byte[3:Datalength + 3] : Data
+    //byte[Datalength + 4] : CR(0x0D)
+    //byte[Datalength + 5] : LF(0x0A)
+    //////////////////////////TODO
+    if (BTSerial.available > 0)
+    {
+        byte b = BTSerial.read();
+        if (b = '\n')
+        {
+            if (buffer_pos == 7)
+            {
+                parsing_Buffer(buffer);
+            }
+            bufferClear();
+        }
+        else
+        {
+            buffer[buffer_pos++] = b;
+            if (buffer_pos > 7)
+            {
+                bufferClear();
+            }
+        }
+    }
 }
 
-void bluetooth_Coms(){
-    //TODO///////////////////////////////////
+//Clear Buffer and Set Buffer_pos = 0
+boolean bufferClear()
+{
+    for (int i = 0; i < 8; i++)
+    {
+        buffer[i] = 0;
+        buffer_pos = 0;
+    }
+    return true;
 }
 
+//Parsing Recived Data
+void parsing_Buffer(byte b[])
+{
+    ////////////////TODO
+}
+
+//Servo Pin Setup
+//Base Limits Setup
+//Tilting Limits Setup
+//Servo Motors Positioning Finish Flag
+//Servo Motors Init Positioning (NEUTRAL = 90)
+void servo_Motor_Init()
+{
+    //Servo Pin Setup
+    mServo_B.servo.attach(S_BASE);
+    mServo_T.servo.attach(S_TILT);
+    //Base Limits Setup
+    mServo_B.limit_p = 110;
+    mServo_B.limit_n = 70;
+    //Tilting Limits Setup
+    mServo_T.limit_p = 110;
+    mServo_T.limit_n = 70;
+    //Servo Motors Positioning Finish Flag
+    mServo_B.positioning_Finished = false;
+    mServo_T.positioning_Finished = false;
+    //Servo Motors Init Positioning (NEUTRAL = 90)
+    mServo_B.servo.write(S_NEUTRAL);
+    mServo_T.servo.write(S_NEUTRAL);
+}
+
+//Servomotor Positioning
+//input = S_INC or S_DEC
+void servo_Position(ServoM sv, int input)
+{
+    int cmd_position = sv.servo.read();
+    if (input == S_INC)
+    {
+        cmd_position += 2;
+        if (cmd_position > sv.limit_p)
+        {
+            cmd_position = sv.limit_p;
+        }
+    }
+    else if (input == S_DEC)
+    {
+        cmd_position -= 2;
+        if (cmd_position < sv.limit_n)
+        {
+            cmd_position = sv.limit_n;
+        }
+    }
+    sv.servo.write(cmd_position);
+}
+
+//Serial Monitoring
 void monitor_Serial()
 {
     //Operation Mode
     monitor_Seperator_Tag("Operation Mode");
-    Serial.println(operation_Mode == 1? String("Automatic mode") : String("Manual Mode"));
+    Serial.println(operation_Mode == 1 ? String("Automatic mode") : String("Manual Mode"));
     //Distance Monitoring
     monitor_Seperator_Tag("Distance");
     Serial.print(String("Front : ") + distance_F + String("cm"));
@@ -101,10 +212,11 @@ void monitor_Serial()
     Serial.println(String(" / Right : ") + distance_R + String("cm"));
     //Servo Motor Monitoring
     monitor_Seperator_Tag("Servo Motors");
-    Serial.print(String("Base-Angle : ") + mServo_B.read() + char(' '));
-    Serial.println(String("Tilt-Angle : ") + mServo_T.read());
+    Serial.print(String("Base-Angle : ") + mServo_B.servo.read() + char(' '));
+    Serial.println(String("Tilt-Angle : ") + mServo_T.servo.read());
 }
 
+//Serial Monitoring Seperator
 void monitor_Seperator_Tag(String monitor_name)
 {
     Serial.print(char('[') + monitor_name + char(']'));
@@ -187,6 +299,18 @@ void returnCarLeft()
 void returnCarRight()
 {
     runLeftBackward();
+}
+
+void holdTurnCarRight()
+{
+    turnCarRight;
+    returnCarLeft;
+}
+
+void holdTurnCarLeft()
+{
+    turnCarLeft;
+    returnCarRight;
 }
 
 void runLeftForward()
