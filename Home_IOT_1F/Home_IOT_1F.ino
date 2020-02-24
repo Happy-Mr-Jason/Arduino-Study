@@ -48,7 +48,7 @@ uint8_t recvData4[4]; //4바이트 형  명령 수신용 버퍼
 //time interval for update data to Android 안드로이드에 업데이트 하는 주기
 long started_time = 0;
 long current_time = 0;
-long interval_time = 5000000; // 20sec = 20000000
+long interval_time = 5000000; // 5sec = 5000000
 
 //timer for 1sec for measure distance 거리 측정 주기
 long started_time_1sec = 0;
@@ -342,7 +342,7 @@ void front_Door()
     { //등록된 카드면 수행
         sendData2w(SEND_CARD_STATUS, ST_CARD_OK);
         lcd.setCursor(0, 0);
-        lcd.print("Ok.Open Door.");
+        lcd.print("OK Wellcome");
         analogWrite(red, 0);
         analogWrite(green, 0);
         analogWrite(blue, 255);
@@ -356,7 +356,7 @@ void front_Door()
     { //등록된 카드가 아니면 수행
         sendData2w(SEND_CARD_STATUS, ST_CARD_NG);
         lcd.setCursor(0, 0);
-        lcd.print("Not registered.");
+        lcd.print("Not registered!!");
         analogWrite(red, 255);
         analogWrite(green, 0);
         analogWrite(blue, 0);
@@ -384,19 +384,18 @@ void parking_Zone()
     if (started_time_1sec + interval_time_1sec <= current_time_1sec)
     {
         measure_distance();
+        Serial.print("Parking Zone Distance : ");
+        Serial.println(distance);
         started_time_1sec = current_time_1sec;
     }
 
-    Serial.print("Parking Zone Distance : ");
-    Serial.println(distance);
-
-    lcd.clear();
     if (distance < 10 && distance > 5)
     {
         if (parking_Door_Closed)
         {
+            lcd.clear();
             lcd.setCursor(0, 0);
-            lcd.print("Open Door.");
+            lcd.print("Open PZone Door");
             analogWrite(red, 255);
             analogWrite(green, 0);
             analogWrite(blue, 0);
@@ -410,11 +409,12 @@ void parking_Zone()
         if (!parking_Door_Closed)
         {
             current_time_3sec = micros();
-            //3초 후 실행 하는 곳  interval_time  = 20000000 (20sec)
+            //3초 후 실행 하는 곳  interval_time_3sec = 3000000 (3sec)
             if (started_time_3sec + interval_time_3sec <= current_time_3sec)
             {
+                lcd.clear();
                 lcd.setCursor(0, 0);
-                lcd.print("Close Door.");
+                lcd.print("Close PZone Door");
                 analogWrite(red, 0);
                 analogWrite(green, 0);
                 analogWrite(blue, 0);
