@@ -22,12 +22,21 @@
 #define S_BASE A0
 #define S_TILT A1
 
-//Bluetooth Communication
+/*
+* Bluetooth Communication
+*/
+//Bluetooth Serail
 SoftwareSerial BTSerial(AD_RX_BT_TX, AD_TX_BT_RX);
-//Bluetooth Communication Buffer
-byte buffer[];
-//Bluetooth Buffer Position
-int buffer_pos = 0;
+const byte RCV_HEADER = 0x05;
+const byte SND_HEADER = 0x06;
+const byte TAIL_CR = 0x0D;
+const byte TAIL_LF = 0x0A;
+byte data_length = 0;
+uint8_t buffer8[8];
+
+/*
+* ServoMotor
+*/
 //ServoMotor Nutral Position
 const int S_NEUTRAL = 90;
 //ServoMotors angle increase
@@ -38,6 +47,7 @@ const int S_DEC = 2;
 struct ServoM
 {
     Servo servo;
+    int pinnum;
     //Servo Rotation Limits
     int limit_p;
     int limit_n;
@@ -73,14 +83,14 @@ void loop()
     distance_Left();
     distance_Right();
     //Motor Controll
-    analogWrite(L_SPEED, 255);
-    analogWrite(R_SPEED, 255);
+    // analogWrite(L_SPEED, 255);
+    // analogWrite(R_SPEED, 255);
     // turnCarLeft();
     // stopCar();
     // turnCarRight();
     // stopCar();
 
-    monitor_Serial();
+    // monitor_Serial();
 }
 
 void board_io_Init()
@@ -109,46 +119,163 @@ void bluetooth_Comms()
     //byte[1] : Address = register or id number
     //byte[2] : Datalength
     //byte[3:Datalength + 3] : Data
-    //byte[Datalength + 4] : CR(0x0D)
-    //byte[Datalength + 5] : LF(0x0A)
+    //byte[Datalength + 4] : CR(0x0D) /r
+    //byte[Datalength + 5] : LF(0x0A) /n
     //////////////////////////TODO
-    if (BTSerial.available > 0)
+    if (BTSerial.available() > 0)
     {
-        byte b = BTSerial.read();
-        if (b = '\n')
+        byte btread = BTSerial.read();
+        Serial.print("Head : ");
+        Serial.println(btread, DEC);
+        byte tail_CR = 0;
+        byte tail_LF = 0;
+        if (btread == RCV_HEADER)
         {
-            if (buffer_pos == 7)
+            data_length = BTSerial.read();
+            Serial.print("Data length : ");
+            Serial.print(data_length, DEC);
+            Serial.println();
+            BTSerial.readBytes(buffer8, data_length);
+            Serial.print("Data : ");
+            Serial.print(buffer8[0], HEX);
+            Serial.print(" ");
+            Serial.print(buffer8[1], HEX);
+            Serial.print(" ");
+            Serial.print(buffer8[2], DEC);
+            Serial.print(" ");
+            Serial.print(buffer8[3], DEC);
+            Serial.println();
+            parsing_Buffer(buffer8);
+        }
+        else if (btread == TAIL_CR)
+        {
+            btread = BTSerial.read();
+            if (btread == TAIL_LF)
             {
-                parsing_Buffer(buffer);
+                Serial.println(F("EOF : CR LF"));
+                bufferClear(buffer8);
             }
-            bufferClear();
         }
         else
         {
-            buffer[buffer_pos++] = b;
-            if (buffer_pos > 7)
-            {
-                bufferClear();
-            }
+            bufferClear(buffer8);
         }
     }
 }
 
 //Clear Buffer and Set Buffer_pos = 0
-boolean bufferClear()
+boolean bufferClear(byte b[])
 {
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < sizeof(b); i++)
     {
-        buffer[i] = 0;
-        buffer_pos = 0;
+        b[i] = 0;
     }
     return true;
 }
 
-//Parsing Recived Data
-void parsing_Buffer(byte b[])
+void buffer_copy(byte *src, byte *dst, int len)
 {
-    ////////////////TODO
+    for (int i = 0; i < len; i++)
+    {
+        *dst++ = *src++;
+    }
+}
+
+//Parsing Recived Data
+void parsing_Buffer(byte cmdbuffer[])
+{
+    byte usebuffer[8];
+    buffer_copy(cmdbuffer, usebuffer, 8);
+
+    Serial.print("Recived Data : ");
+    for (int i = 0; i < 8; i++)
+    {
+        Serial.print(usebuffer[i], HEX);
+    }
+    Serial.println();
+
+    switch (usebuffer[0])
+    {
+    case 'C':
+        btcmd_Car_Moving(usebuffer);
+        break;
+    case 'T':
+        btcmd_Tilting_Moving(usebuffer);
+        break;
+    default:
+        break;
+    }
+}
+
+boolean btcmd_Car_Moving(byte cmdbuffer[])
+{
+    // servo_On();
+    Serial.print("Car Moving Command : ");
+    Serial.print((char)cmdbuffer[1]);
+    int speedLeft = cmdbuffer[2];
+    int speedRight = cmdbuffer[3];
+    Serial.print(" ");
+    Serial.print(speedLeft);
+    Serial.print(" ");
+    Serial.println(speedRight);
+
+    analogWrite(L_SPEED, map(speedLeft, 0, 100, 0, 255));
+    analogWrite(R_SPEED, map(speedRight, 0, 100, 0, 255));
+    switch (cmdbuffer[1])
+    {
+    case 'F':
+        runCarforward();
+        break;
+    case 'B':
+        runCarBackward();
+        break;
+    }
+    return true;
+}
+
+boolean btcmd_Tilting_Moving(byte cmdbuffer[])
+{
+    // servo_On();
+    Serial.print("Tilting Moving Command : ");
+    Serial.println((char)cmdbuffer[1]);
+    switch (cmdbuffer[1])
+    {
+    case 'U':
+        tilting_servo_Position(mServo_T, S_DEC);
+        // tilting_servo_Position2(mServo_T, 60);
+        break;
+    case 'D':
+        tilting_servo_Position(mServo_T, S_INC);
+        // tilting_servo_Position2(mServo_T, 120);
+        break;
+    case 'L':
+        tilting_servo_Position(mServo_B, S_INC);
+        // tilting_servo_Position2(mServo_B, 120);
+        break;
+    case 'R':
+        tilting_servo_Position(mServo_B, S_DEC);
+        // tilting_servo_Position2(mServo_B, 60);
+        break;
+    case 'N':
+        tilting_servo_Position2(mServo_B, S_NEUTRAL);
+        tilting_servo_Position2(mServo_T, S_NEUTRAL);
+        break;
+    case 'T':
+        break;
+    }
+    return true;
+}
+
+void servo_On()
+{
+    mServo_B.servo.attach(mServo_B.pinnum);
+    mServo_T.servo.attach(mServo_T.pinnum);
+}
+
+void servo_Off()
+{
+    mServo_B.servo.detach();
+    mServo_T.servo.detach();
 }
 
 //Servo Pin Setup
@@ -159,30 +286,38 @@ void parsing_Buffer(byte b[])
 void servo_Motor_Init()
 {
     //Servo Pin Setup
-    mServo_B.servo.attach(S_BASE);
-    mServo_T.servo.attach(S_TILT);
+    mServo_B.pinnum = S_BASE;
+    mServo_T.pinnum = S_TILT;
+    mServo_B.servo.attach(mServo_B.pinnum);
+    mServo_T.servo.attach(mServo_T.pinnum);
     //Base Limits Setup
-    mServo_B.limit_p = 110;
-    mServo_B.limit_n = 70;
+    mServo_B.limit_p = 120;
+    mServo_B.limit_n = 60;
     //Tilting Limits Setup
-    mServo_T.limit_p = 110;
-    mServo_T.limit_n = 70;
+    mServo_T.limit_p = 120;
+    mServo_T.limit_n = 60;
     //Servo Motors Positioning Finish Flag
     mServo_B.positioning_Finished = false;
     mServo_T.positioning_Finished = false;
     //Servo Motors Init Positioning (NEUTRAL = 90)
     mServo_B.servo.write(S_NEUTRAL);
     mServo_T.servo.write(S_NEUTRAL);
+    mServo_B.servo.detach();
+    mServo_T.servo.detach();
 }
 
 //Servomotor Positioning
 //input = S_INC or S_DEC
-void servo_Position(ServoM sv, int input)
+boolean tilting_servo_Position(ServoM sv, int input)
 {
+    Serial.println("Run Tilting Servo 1...");
+    sv.servo.attach(sv.pinnum);
+    while (!sv.servo.attached())
+        ;
     int cmd_position = sv.servo.read();
     if (input == S_INC)
     {
-        cmd_position += 2;
+        cmd_position += 10;
         if (cmd_position > sv.limit_p)
         {
             cmd_position = sv.limit_p;
@@ -190,13 +325,69 @@ void servo_Position(ServoM sv, int input)
     }
     else if (input == S_DEC)
     {
-        cmd_position -= 2;
+        cmd_position -= 10;
         if (cmd_position < sv.limit_n)
         {
             cmd_position = sv.limit_n;
         }
     }
-    sv.servo.write(cmd_position);
+
+    int current_position = sv.servo.read();
+    if (current_position < cmd_position)
+    {
+        for (int i = current_position; i <= cmd_position; i++)
+        {
+            sv.servo.write(i);
+        }
+    }
+    else if (current_position > cmd_position)
+    {
+        for (int i = current_position; i >= cmd_position; i--)
+        {
+            sv.servo.write(i);
+        }
+    }
+    delay(500);
+    sv.servo.detach();
+    return true;
+}
+
+boolean tilting_servo_Position2(ServoM sv, int angle)
+{
+    Serial.println("Run Tilting Servo 2 ...");
+    sv.servo.attach(sv.pinnum);
+    while (!sv.servo.attached())
+        ;
+    int current_position = sv.servo.read();
+    int cmd_position = angle;
+
+    if (cmd_position > sv.limit_p)
+    {
+        cmd_position = sv.limit_p;
+    }
+
+    if (cmd_position < sv.limit_n)
+    {
+        cmd_position = sv.limit_n;
+    }
+
+    if (current_position < cmd_position)
+    {
+        for (int i = current_position; i <= cmd_position; i++)
+        {
+            sv.servo.write(i);
+        }
+    }
+    else if (current_position > cmd_position)
+    {
+        for (int i = current_position; i >= cmd_position; i--)
+        {
+            sv.servo.write(i);
+        }
+    }
+    delay(500);
+    sv.servo.detach();
+    return true;
 }
 
 //Serial Monitoring
