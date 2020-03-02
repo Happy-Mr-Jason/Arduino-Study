@@ -23,6 +23,43 @@
 #define S_TILT A1
 
 /*
+Car Operation Mode
+*/
+int car_Mode = 0;
+boolean car_stopped = true;
+#define CAR_MODE_JOYSTIC 1
+#define CAR_MODE_BUTTON 2
+#define CAR_MODE_SENSOR 3
+/*
+Car Sensor Mode
+*/
+int car_sensorMode = 0;
+#define CAR_SENSOR_MODE_STOP 0
+#define CAR_SENSOR_MODE_START 1
+boolean car_sensormodestarted = false;
+#define SEL_DIRECTION_FRONT 1
+#define SEL_DIRECTION_LEFT 2
+#define SEL_DIRECTION_RIGHT 3
+#define SEL_DIRECTION_BACK 4
+int selectedDirection = 0;
+//memory of prev Direction
+byte prevDirection;
+//Front blocked distance
+int f_block_d = 10;
+//Front Turnable free distance
+int f_free_d = 15;
+//Left-Right compare threshold distance
+int lr_comp_th_d = 5;
+int target_d = 0;
+
+/*
+Camera Tilting Operation Mode
+*/
+int tilting_Mode = 0;
+#define TILTING_MODE_BUTTON 1
+#define TILTING_MODE_TRACKING 2
+
+/*
 * Bluetooth Communication
 */
 //Bluetooth Serail
@@ -59,6 +96,13 @@ struct ServoM
 int operation_Mode = 0;
 //Distans variables (Unit : cm)
 int distance_F, distance_R, distance_L;
+/*
+  loop interval timer millis();
+*/
+long loop_current_time;
+long timer_1sec_start;
+const long timer_1sec_interval = 1000;
+boolean timer_1sec_on = false;
 
 void setup()
 {
@@ -76,12 +120,41 @@ void setup()
 
 void loop()
 {
+    loop_current_time = millis();
+    if (loop_current_time > (timer_1sec_start + timer_1sec_interval))
+    {
+        timer_1sec_on = true;
+        timer_1sec_start = loop_current_time;
+    }
+    else
+    {
+        timer_1sec_on = false;
+    }
     //Bluetooth Communication
     bluetooth_Comms();
     //Mesurement of Distance
     distance_Front();
     distance_Left();
     distance_Right();
+    //CAR Sensor Mode
+
+    if (timer_1sec_on)
+    {
+        monitor_Serial();
+        if (car_Mode == CAR_MODE_SENSOR)
+        {
+            if (car_sensorMode == CAR_SENSOR_MODE_START)
+            {
+                sensormodeStart();
+            }
+            else
+            {
+
+                sensormodeStop();
+            }
+        }
+    }
+
     //Motor Controll
     // analogWrite(L_SPEED, 255);
     // analogWrite(R_SPEED, 255);
@@ -212,6 +285,8 @@ boolean btcmd_Car_Moving(byte cmdbuffer[])
     // servo_On();
     Serial.print("Car Moving Command : ");
     Serial.print((char)cmdbuffer[1]);
+    int mode = cmdbuffer[2];
+    int sensormoderun = cmdbuffer[2];
     int speedLeft = cmdbuffer[2];
     int speedRight = cmdbuffer[3];
     Serial.print(" ");
@@ -219,25 +294,232 @@ boolean btcmd_Car_Moving(byte cmdbuffer[])
     Serial.print(" ");
     Serial.println(speedRight);
 
-    analogWrite(L_SPEED, map(speedLeft, 0, 100, 0, 255));
-    analogWrite(R_SPEED, map(speedRight, 0, 100, 0, 255));
     switch (cmdbuffer[1])
     {
     case 'F':
-        runCarforward();
+        carSpeedSelect(speedLeft, speedRight);
+        runCarForward();
         break;
     case 'B':
+        carSpeedSelect(speedLeft, speedRight);
         runCarBackward();
+        break;
+    case 'L':
+        carSpeedSelect(speedLeft, speedRight);
+        turnCarLeft();
+        break;
+    case 'R':
+        carSpeedSelect(speedLeft, speedRight);
+        turnCarRight();
+        break;
+    case 'S':
+        stopCar();
+        break;
+    case 'A':
+        carSensorMode(sensormoderun);
+        break;
+    case 'M':
+        carModeChange(mode);
         break;
     }
     return true;
+}
+
+void carSpeedSelect(int leftspeed, int rightspeed)
+{
+    if (car_Mode == CAR_MODE_BUTTON)
+    {
+        analogWrite(L_SPEED, 255);
+        analogWrite(R_SPEED, 255);
+    }
+    else
+    {
+        analogWrite(L_SPEED, map(leftspeed, 0, 100, 0, 255));
+        analogWrite(R_SPEED, map(rightspeed, 0, 100, 0, 255));
+    }
+}
+
+void carModeChange(int selectedMode)
+{
+    switch (selectedMode)
+    {
+    case CAR_MODE_JOYSTIC:
+        car_Mode = CAR_MODE_JOYSTIC;
+        break;
+    case CAR_MODE_BUTTON:
+        car_Mode = CAR_MODE_BUTTON;
+        break;
+    case CAR_MODE_SENSOR:
+        car_Mode = CAR_MODE_SENSOR;
+        break;
+    }
+}
+
+void carSensorMode(int sensormoderun)
+{
+    switch (sensormoderun)
+    {
+    case 0:
+        car_sensorMode = CAR_SENSOR_MODE_STOP;
+        break;
+    case 1:
+        car_sensorMode = CAR_SENSOR_MODE_START;
+        break;
+    }
+}
+
+void sensormodeStart()
+{
+    if (car_sensormodestarted != true)
+    {
+        Serial.println("Sensor Mode Start!!");
+    }
+    car_sensormodestarted = true;
+    car_stopped = false;
+
+    selectedDirection = selectDirection();
+    Serial.print("Selected Direction : ");
+
+    switch (selectedDirection)
+    {
+    case SEL_DIRECTION_FRONT:
+        Serial.println("Front");
+        analogWrite(L_SPEED, 255);
+        analogWrite(R_SPEED, 255);
+        runCarForward();
+        break;
+    case SEL_DIRECTION_BACK:
+        Serial.println("Back");
+        analogWrite(L_SPEED, 130);
+        analogWrite(R_SPEED, 130);
+        runCarBackward();
+        break;
+    case SEL_DIRECTION_LEFT:
+        Serial.println("Left");
+        analogWrite(L_SPEED, 130);
+        analogWrite(R_SPEED, 130);
+        holdTurnCarLeft();
+        break;
+    case SEL_DIRECTION_RIGHT:
+        Serial.println("Right");
+        analogWrite(L_SPEED, 130);
+        analogWrite(R_SPEED, 130);
+        holdTurnCarRight();
+        break;
+    }
+
+    Serial.print("Target Distance : ");
+    Serial.println(target_d);
+}
+
+void sensormodeStop()
+{
+    if (car_sensormodestarted != false)
+    {
+        Serial.println("Sensor Mode Stop!!");
+    }
+    car_sensormodestarted = false;
+    if (car_stopped != true)
+    {
+        stopCar();
+    }
+}
+
+int selectDirection()
+{
+    memprevDirection(selectedDirection);
+
+    if (prevDirection >= 5 && distance_F >= target_d)
+    {
+        prevDirection = 0;
+        target_d = 0;
+    }
+
+    if (distance_F > f_block_d && !checkmemDirection(SEL_DIRECTION_FRONT) && prevDirection == 0)
+    {
+        return SEL_DIRECTION_FRONT;
+    }
+    else if (distance_L > f_block_d && distance_L > distance_R + lr_comp_th_d && distance_F > f_free_d)
+    {
+        if (target_d == 0)
+        {
+            target_d = distance_L;
+        }
+        return SEL_DIRECTION_LEFT;
+    }
+    else if (distance_R > f_block_d && distance_R > distance_L + lr_comp_th_d && distance_F > f_free_d)
+    {
+        if (target_d == 0)
+        {
+            target_d = distance_R;
+        }
+        return SEL_DIRECTION_RIGHT;
+    }
+    else if (!checkmemDirection(SEL_DIRECTION_BACK) && (distance_F < f_free_d || (distance_L < f_block_d && distance_R < f_block_d)))
+    {
+
+        return SEL_DIRECTION_BACK;
+    }
+}
+
+void memprevDirection(int saveDirection)
+{
+    switch (saveDirection)
+    {
+    case SEL_DIRECTION_FRONT:
+        prevDirection = prevDirection | 0x01;
+        break;
+    case SEL_DIRECTION_BACK:
+        prevDirection = prevDirection | 0x02;
+        break;
+    case SEL_DIRECTION_LEFT:
+        prevDirection = prevDirection | 0x04;
+        break;
+    case SEL_DIRECTION_RIGHT:
+        prevDirection = prevDirection | 0x08;
+        break;
+    }
+}
+
+boolean checkmemDirection(int checkDirection)
+{
+    byte check;
+    switch (checkDirection)
+    {
+    case SEL_DIRECTION_FRONT:
+        check = prevDirection & 0x01;
+        break;
+    case SEL_DIRECTION_BACK:
+        check = prevDirection & 0x02;
+        break;
+    case SEL_DIRECTION_LEFT:
+        check = prevDirection & 0x04;
+        break;
+    case SEL_DIRECTION_RIGHT:
+        check = prevDirection & 0x08;
+        break;
+    }
+    Serial.print("Check Direction Memory : ");
+    Serial.println(prevDirection);
+
+    if (check > 0)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 boolean btcmd_Tilting_Moving(byte cmdbuffer[])
 {
     // servo_On();
     Serial.print("Tilting Moving Command : ");
-    Serial.println((char)cmdbuffer[1]);
+    Serial.print((char)cmdbuffer[1]);
+    int mode = cmdbuffer[2];
+    Serial.print(" ");
+    Serial.println(mode);
     switch (cmdbuffer[1])
     {
     case 'U':
@@ -260,10 +542,24 @@ boolean btcmd_Tilting_Moving(byte cmdbuffer[])
         tilting_servo_Position2(mServo_B, S_NEUTRAL);
         tilting_servo_Position2(mServo_T, S_NEUTRAL);
         break;
-    case 'T':
+    case 'M':
+        tiltingModeChange(mode);
         break;
     }
     return true;
+}
+
+void tiltingModeChange(int selectedMode)
+{
+    switch (selectedMode)
+    {
+    case TILTING_MODE_BUTTON:
+        tilting_Mode = TILTING_MODE_BUTTON;
+        break;
+    case TILTING_MODE_TRACKING:
+        tilting_Mode = TILTING_MODE_TRACKING;
+        break;
+    }
 }
 
 void servo_On()
@@ -458,9 +754,10 @@ void stopCar()
 {
     stopLeft();
     stopRight();
+    car_stopped = true;
 }
 
-void runCarforward()
+void runCarForward()
 {
     runRightForward();
     runLeftForward();
@@ -494,14 +791,14 @@ void returnCarRight()
 
 void holdTurnCarRight()
 {
-    turnCarRight;
-    returnCarLeft;
+    turnCarRight();
+    returnCarLeft();
 }
 
 void holdTurnCarLeft()
 {
-    turnCarLeft;
-    returnCarRight;
+    turnCarLeft();
+    returnCarRight();
 }
 
 void runLeftForward()
